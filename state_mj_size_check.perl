@@ -47,8 +47,8 @@ system("rm zsize");
 if($size[0] < $size[1]) {
 	
 	open (FILE, ">/tmp/mjmail.tmp");
-	print FILE 'Please check: \n";
-	print FILE '   /data/mta/www/mta_states/MJ/';
+	print FILE "Please check: \n";
+	print FILE '/data/mta/www/mta_states/MJ/';
 	print FILE "$year/mta_comprehensive_data_summary$year\n";
 	close FILE;
 

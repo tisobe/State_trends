@@ -24,7 +24,7 @@ use PGPLOT;					# pgplot package
 #
 
 $bin_dir       = '/data/mta/MTA/bin/';
-$data_dir      = '/data/mta/MTA/data/';
+$data_dir      = '/data/mta/MTA/data/State_trends/';
 $web_dir       = '/data/mta/www/mta_states/MJ/';
 $house_keeping = '/data/mta/Script/OBT/MJ/house_keeping/';
 

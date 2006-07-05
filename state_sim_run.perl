@@ -18,7 +18,7 @@ use PGPLOT;
 #
 
 $bin_dir       = '/data/mta/MTA/bin/';
-$data_dir      = '/data/mta/MTA/data/';
+$data_dir      = '/data/mta/MTA/data/State_trends/';
 $web_dir       = '/data/mta/www/mta_states/ACIS/';
 $house_keeping = '/data/mta/Script/OBT/ACIS/house_keeping/';
 
@@ -50,7 +50,7 @@ $diryear = 1900 + $uyear;
 if($uyday ==  1) {
         $last_year = $diryear - 1;
         $last_file = "$web_dir"."/$last_year".'/sim_data_summary'."$last_year";
-        system("cat $data_dir/header $house_keeping/sim_data_summary > $last_file");
+        system("cat $data_dir/sim_header $house_keeping/sim_data_summary > $last_file");
 
         system("rm $house_keeping/sim_data_summary");
 
@@ -107,11 +107,11 @@ system("cat acissimpos* > alldata");
 #--- remove headers
 #
 
-system("sed -f $data_dir/sedscript1 alldata > alldata_cleaned");
+system("sed -f $data_dir/sim_sedscript1 alldata > alldata_cleaned");
 
 system("sort alldata_cleaned > alldata_cleaned_sorted");
 
-system("nawk -F\"\\t\" -f $data_dir/nawkscript alldata_cleaned_sorted       > alldata_cleaned_sorted_timed");
+system("nawk -F\"\\t\" -f $data_dir/sim_nawkscript alldata_cleaned_sorted       > alldata_cleaned_sorted_timed");
 system("cat $house_keeping/sim_data_summary alldata_cleaned_sorted_timed > ./data_summary");
 
 system("rm alldata*");
@@ -131,7 +131,7 @@ system("mv $house_keeping/sim_data_summary $house_keeping/sim_data_summary~");
 system("mv sim_data_summary                $house_keeping/sim_data_summary");
 
 $sim_file = 'sim_data_summary'."$diryear";
-system("cat $data_dir/header $house_keeping/sim_data_summary > $web_dir/$diryear/$sim_file");
+system("cat $data_dir/sim_header $house_keeping/sim_data_summary > $web_dir/$diryear/$sim_file");
 
 system("rm data_summary temp_data_summary acissimpos*tl");
 
@@ -184,7 +184,7 @@ foreach $comp (@data_list) {
 #--- read a header file to get msids
 #
 
-$list  = `cat $data_dir/header`;
+$list  = `cat $data_dir/sim_header`;
 @title =  split(/\s+/, $list);
 
 #
@@ -1120,8 +1120,8 @@ close(OUT);
 #--- a html page for $diryear
 #
 
-$htmname= "$web_dir".'/year'."$diryear".'.html';
-open(OUT,">./$htmname");
+$htmname = "$web_dir".'/year'."$diryear".'.html';
+open(OUT,">$htmname");
 
 print OUT '<BODY TEXT="#FFFFFF" BGCOLOR="#000000" LINK="#00CCFF" VLINK="#B6FFFF" ALINK="#FF0000">';
 print OUT "\n";
