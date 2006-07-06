@@ -7,7 +7,7 @@
 #										#
 #		author: t. isobe (tiosbe@cfa.harvard.edu)			#
 #										#
-#		last update: Jul 3, 2006					#
+#		last update: Jul 6, 2006					#
 #										#
 #################################################################################
 
@@ -21,8 +21,6 @@ $data_dir      = '/data/mta/MTA/data/';
 $web_dir       = '/data/mta/www/mta_states/MJ/';
 $house_keeping = '/data/mta/Script/OBT/MJ/house_keeping/';
 
-$web_dir       = '/data/mta/www/mta_temp/mta_states_test/MJ/';
-$house_keeping = '/data/mta/Script/OBT/MJ_test/house_keeping/';
 ##############################################################
 
 system("ls -l $house_keeping/comprehensive_data_summary* > zsize");

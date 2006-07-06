@@ -14,7 +14,7 @@ use PGPLOT;					# pgplot package
 ###										###
 ###	Author: Takashi Isobe (tisobe@cfa.harvad.edu)				###
 ###										###
-###	Last Update: Jun 30, 2006						###
+###	Last Update: Jul 06, 2006						###
 ###										###
 ###################################################################################
 
@@ -28,9 +28,6 @@ $data_dir      = '/data/mta/MTA/data/State_trends/';
 $web_dir       = '/data/mta/www/mta_states/MJ/';
 $house_keeping = '/data/mta/Script/OBT/MJ/house_keeping/';
 
-$web_dir       = '/data/mta/www/mta_temp/mta_states_test/MJ/';
-$house_keeping = '/data/mta/Script/OBT/MJ_test/house_keeping/';
-#----DON'T FORGET TO CHANGE RCP !!!
 ##############################################################
 
 #
@@ -187,8 +184,7 @@ system("rm data_summary temp_data_summary mjsimpos*tl");
 #--- rcp to scrapper
 #
 
-#####system("rcp $web_dir/$diryear/$comp_file  scrapper:/pool14/chandra/acis_diag_support/");
-system("rcp $web_dir/$diryear/$comp_file  rhodes:/data/mta/Script/OBT/MJ_test/Test_out/");
+system("rcp $web_dir/$diryear/$comp_file  scrapper:/pool14/chandra/acis_diag_support/");
 
 system("mv $house_keeping/comprehensive_data_summary $house_keeping/comprehensive_data_summary~");
 system("mv comprehensive_data_summary                $house_keeping/comprehensive_data_summary");
