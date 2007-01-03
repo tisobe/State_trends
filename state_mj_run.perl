@@ -14,7 +14,7 @@ use PGPLOT;					# pgplot package
 ###										###
 ###	Author: Takashi Isobe (tisobe@cfa.harvad.edu)				###
 ###										###
-###	Last Update: Jul 06, 2006						###
+###	Last Update: Jan 03, 2007						###
 ###										###
 ###################################################################################
 
@@ -47,13 +47,13 @@ $diryear = 1900 + $uyear;
 
 #
 #---check whether we need a new directory or not
-#---this happens only once a year on Jan 2.
+#---this happens only once a year on Jan 1.
 #
 
-if($uyday ==  1) {
+if($uyday ==  0) {
         $last_year  = $diryear - 1;
         $last_file  = "$web_dir"."/$last_year".'/comprehensive_data_summary'."$last_year";
-        system("cat $data_dir/mj_header $house_keeping/comprehensive_data_summary > $last_file");
+        system("cat $data_dir/mj_header $house_keeping/comprehensive_data_summary~ > $last_file");
 
         system("rm $house_keeping/comprehensive_data_summary");
 
