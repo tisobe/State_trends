@@ -8,7 +8,7 @@ use PGPLOT;
 #											#
 #		 author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update Jul 3, 2006							#
+#		last update Feb 15, 2007						#
 #											#
 #########################################################################################
 
@@ -22,10 +22,9 @@ $data_dir      = '/data/mta/MTA/data/State_trends/';
 $web_dir       = '/data/mta/www/mta_states/ACIS/';
 $house_keeping = '/data/mta/Script/OBT/ACIS/house_keeping/';
 
-$web_dir       = '/data/mta/www/mta_temp/mta_states_test/ACIS/';
-$house_keeping = '/data/mta/Script/OBT/ACIS_test/house_keeping/';
+#$web_dir       = '/data/mta/www/mta_temp/mta_states_test/ACIS/';
+#$house_keeping = '/data/mta/Script/OBT/ACIS_test/house_keeping/';
 
-#----DON'T FORGET TO CHANGE RCP !!!
 ##############################################################
 
 #
@@ -47,7 +46,7 @@ $diryear = 1900 + $uyear;
 #---this happens only once a year on Jan 2.
 #
 
-if($uyday ==  1) {
+if($uyday ==  0) {
         $last_year = $diryear - 1;
         $last_file = "$web_dir"."/$last_year".'/sim_data_summary'."$last_year";
         system("cat $data_dir/sim_header $house_keeping/sim_data_summary > $last_file");
@@ -140,7 +139,7 @@ system("rm data_summary temp_data_summary acissimpos*tl");
 #
 
 ######system("rcp $web_dir/$diryear/$sim_file  scrapper:/pool14/chandra/acis_diag_support/`;
-system("rcp $web_dir/$diryear/$sim_file   rhodes:/data/mta/Script/OBT/MJ_test/Test_out/");
+######system("rcp $web_dir/$diryear/$sim_file   rhodes:/data/mta/Script/OBT/MJ_test/Test_out/");
 
 
 
