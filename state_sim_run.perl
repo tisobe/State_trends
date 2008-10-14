@@ -8,7 +8,7 @@ use PGPLOT;
 #											#
 #		 author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update Feb 15, 2007						#
+#		last update Oct 14, 2008						#
 #											#
 #########################################################################################
 
@@ -1005,31 +1005,54 @@ sub make_it_int {
 ######################################################
 
 sub rm_dupl {
-        open(FH,  "./temp_data_summary");
-        open(OUT, ">sim_data_summary");
-        $count = 0;
-	OUTER:
-        while(<FH>) {
+        system('df -k . > zspace');
+        open(INR, "./zspace");
+        while(<INR>){
                 chomp $_;
-		@stemp = split(/:/, $_);
-		if($stemp[0] < $diryear){
-			next OUTER;
-		}
-                if($count == 0) {
-                        $line = $_;
-                        print OUT "$_\n";
-                        $count++;
-                }else{
-                        unless($_ eq $line) {
-                                $line = $_;
-                                print OUT "$_\n";
+                if($_ =~ /\%/){
+                        @atemp = split(/\s+/, $_);
+                        @btemp = split(/\%/, $atemp[4]);
+                        if($btemp[0] > 98){
+                                open(FILE, ">.zwarning");
+                                print FILE "Please check: /data/mta/www/mta_states/SIM/';
+                                print FILE "$year/mta_sim_data_summary$year\n\n";
+                                print FILE "Due to a disk space, the data was not updated\n";
+                                close(FILE);
+
+                                system("cat zwarning| mailx -s \"Subject:  SIM summary problem detected !!\n \" -r isobe\@head.cfa.harvard.edu  isobe\@head.cfa.harvard.edu ");
+                                system("rm zwarning");
                         }else{
-                                $line = $_;
-                        }
-                }
-        }
-        close(FH);
-        close(OUT);
+
+        			open(FH,  "./temp_data_summary");
+        			open(OUT, ">sim_data_summary");
+        			$count = 0;
+				OUTER:
+        			while(<FH>) {
+                			chomp $_;
+					@stemp = split(/:/, $_);
+					if($stemp[0] < $diryear){
+						next OUTER;
+					}
+                			if($count == 0) {
+                        			$line = $_;
+                        			print OUT "$_\n";
+                        			$count++;
+                			}else{
+                        			unless($_ eq $line) {
+                                			$line = $_;
+                                			print OUT "$_\n";
+                        			}else{
+                                			$line = $_;
+                        			}
+                			}
+        			}
+        			close(FH);
+        			close(OUT);
+			}
+		}
+	}
+	close(INR);
+	system("rm ./zspace");
 }
 
 ######################################################

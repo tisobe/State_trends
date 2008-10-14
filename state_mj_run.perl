@@ -14,7 +14,7 @@ use PGPLOT;					# pgplot package
 ###										###
 ###	Author: Takashi Isobe (tisobe@cfa.harvad.edu)				###
 ###										###
-###	Last Update: Jan 03, 2007						###
+###	Last Update: Oct 14, 2008						###
 ###										###
 ###################################################################################
 
@@ -1336,31 +1336,54 @@ sub make_it_int {
 ######################################################
 
 sub rm_dupl {
-	open(FH, "./temp_data_summary");
-	open(OUT,">comprehensive_data_summary");
-	$count = 0;
-	OUTER:
-	while(<FH>) {
-		chomp $_;
-		@stemp = split(/:/, $_);
-		if($stemp[0] !~ /$diryear/){
-			next OUTER;
-		}
-		if($count == 0) {
-			$line = $_;
-			print OUT "$_\n";
-			$count++;
-		}else{
-			unless($_ eq $line) {
-				$line = $_;
-				print OUT "$_\n";
+	system('df -k . > zspace');
+	open(INR, "./zspace");
+	while(<INR>){
+        	chomp $_;
+        	if($_ =~ /\%/){
+                	@atemp = split(/\s+/, $_);
+                	@btemp = split(/\%/, $atemp[4]);
+                	if($btemp[0] > 98){
+				open(FILE, ">.zwarning");
+				print FILE "Please check: /data/mta/www/mta_states/MJ/';
+				print FILE "$year/mta_comprehensive_data_summary$year\n\n";
+				print FILE "Due to a disk space, the data was not updated\n";
+				close(FILE);
+
+				system("cat zwarning| mailx -s \"Subject: MJ summary problem detected !!\n \" -r isobe\@head.cfa.harvard.edu  isobe\@head.cfa.harvard.edu ");
+				system("rm zwarning");
 			}else{
-				$line = $_;
-			}
-		}
+
+				open(FH, "./temp_data_summary");
+				open(OUT,">comprehensive_data_summary");
+				$count = 0;
+				OUTER:
+				while(<FH>) {
+					chomp $_;
+					@stemp = split(/:/, $_);
+					if($stemp[0] !~ /$diryear/){
+						next OUTER;
+					}
+					if($count == 0) {
+						$line = $_;
+						print OUT "$_\n";
+						$count++;
+					}else{
+						unless($_ eq $line) {
+							$line = $_;
+							print OUT "$_\n";
+						}else{
+							$line = $_;
+						}
+					}
+				}
+				close(FH);
+				close(OUT);
+                	}
+        	}
 	}
-	close(FH);
-	close(OUT);
+	close(INR);
+	system("rm ./zspace");
 }
 
 

@@ -7,7 +7,7 @@
 #										#
 #		author: t. isobe (tiosbe@cfa.harvard.edu)			#
 #										#
-#		last update: Jul 6, 2006					#
+#		last update: Oct 14, 2008					#
 #										#
 #################################################################################
 
@@ -51,7 +51,7 @@ if($size[0] < $size[1]) {
 	close FILE;
 
 	system("/opt/local/bin/mh/send -draftmessage /tmp/mjmail.tmp");
-	system("cat /tmp/mjmail.tmp | mailx mailx -s \"Subject: MJ summary problem detected !!\n \" -r  isobe\@head.cfa.harvard.edu  isobe\@head.cfa.harvard.edu ");
+	system("cat /tmp/mjmail.tmp | mailx -s \"Subject: MJ summary problem detected !!\n \" -r  isobe\@head.cfa.harvard.edu  isobe\@head.cfa.harvard.edu ");
 
 	system("rm /tmp/mjmail.tmp");
 }
