@@ -1345,7 +1345,7 @@ sub rm_dupl {
                 	@btemp = split(/\%/, $atemp[4]);
                 	if($btemp[0] > 98){
 				open(FILE, ">.zwarning");
-				print FILE "Please check: /data/mta/www/mta_states/MJ/';
+				print FILE "Please check: /data/mta/www/mta_states/MJ/";
 				print FILE "$year/mta_comprehensive_data_summary$year\n\n";
 				print FILE "Due to a disk space, the data was not updated\n";
 				close(FILE);
