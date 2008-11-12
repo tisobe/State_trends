@@ -8,7 +8,7 @@ use PGPLOT;
 #											#
 #		 author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update Oct 14, 2008						#
+#		last update Nov 12, 2008						#
 #											#
 #########################################################################################
 
@@ -1014,7 +1014,7 @@ sub rm_dupl {
                         @btemp = split(/\%/, $atemp[4]);
                         if($btemp[0] > 98){
                                 open(FILE, ">.zwarning");
-                                print FILE "Please check: /data/mta/www/mta_states/SIM/';
+                                print FILE "Please check: /data/mta/www/mta_states/SIM/";
                                 print FILE "$year/mta_sim_data_summary$year\n\n";
                                 print FILE "Due to a disk space, the data was not updated\n";
                                 close(FILE);
