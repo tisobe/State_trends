@@ -7,4 +7,4 @@ setenv PFILES "${PDIRS}:${SYSPFILES}"
 set path = (/home/ascds/DS.release/bin/  $path)
 
 
-perl  /data/mta/MTA/bin/state_sim_run.perl
+/opt/local/bin/perl  /data/mta/MTA/bin/state_sim_run.perl

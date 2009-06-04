@@ -6,6 +6,6 @@ source /home/mta/bin/reset_param
 setenv PFILES "${PDIRS}:${SYSPFILES}"
 set path = (/home/ascds/DS.release/bin/  $path)
 
-perl /data/mta/MTA/bin/state_mj_run.perl
+/opt/local/bin/perl /data/mta/MTA/bin/state_mj_run.perl
 
-perl /data/mta/MTA/bin/state_mj_size_check.perl
+/opt/local/bin/perl /data/mta/MTA/bin/state_mj_size_check.perl
