@@ -8,3 +8,10 @@ set path = (/home/ascds/DS.release/bin/  $path)
 
 
 /opt/local/bin/perl  /data/mta/MTA/bin/state_sim_run.perl
+
+
+chgrp mtagroup /data/mta_www/mta_temp/mta_states/ACIS/*
+chgrp mtagroup /data/mta_www/mta_temp/mta_states/ACIS/*/*
+
+chgrp mtagroup /data/mta/Script/OBT/ACIS/*
+chgrp mtagroup /data/mta/Script/OBT/ACIS/house_keeping/*
