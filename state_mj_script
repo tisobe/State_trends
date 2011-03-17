@@ -9,3 +9,9 @@ set path = (/home/ascds/DS.release/bin/  $path)
 /opt/local/bin/perl /data/mta/MTA/bin/state_mj_run.perl
 
 /opt/local/bin/perl /data/mta/MTA/bin/state_mj_size_check.perl
+
+chgrp mtagroup /data/mta_www/mta_temp/mta_states/MJ/*
+chgrp mtagroup /data/mta_www/mta_temp/mta_states/MJ/*/*
+
+chgrp mtagropu /data/mta/Script/OBT/MJ//*
+chgrp mtagropu /data/mta/Script/OBT/MJ//house_keeping/*
