@@ -6,6 +6,7 @@ TASK = State_trends
 include /data/mta/MTA/include/Makefile.MTA
 
 BIN  = acorn state_mj_run.perl state_mj_script state_mj_size_check.perl state_mj_wrap_script state_sim_run.perl state_sim_script state_sim_wrap_script
+ create_report_page_outputs.perl 
 
 DATA = mj_header mj_nawkscript mj_sedscript1 sim_header sim_nawkscript sim_sedscript1 simpos_acis.scr simpos_acis2.scr
 
