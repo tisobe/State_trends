@@ -13,5 +13,5 @@ set path = (/home/ascds/DS.release/bin/  $path)
 chgrp mtagroup /data/mta_www/mta_temp/mta_states/MJ/*
 chgrp mtagroup /data/mta_www/mta_temp/mta_states/MJ/*/*
 
-chgrp mtagropu /data/mta/Script/OBT/MJ//*
-chgrp mtagropu /data/mta/Script/OBT/MJ//house_keeping/*
+chgrp mtagroup /data/mta/Script/OBT/MJ//*
+chgrp mtagroup /data/mta/Script/OBT/MJ//house_keeping/*
