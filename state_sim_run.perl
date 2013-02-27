@@ -8,23 +8,51 @@ use PGPLOT;
 #											#
 #		 author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update Nov 12, 2008						#
+#		last update Jan 29, 2013						#
 #											#
 #########################################################################################
+
+#
+#--- check whether this is a test case
+#
+
+$comp_test = $ARGV[0];
+chomp $comp_test;
+
+if($comp_test =~ /test/i){
+        $input = `ls -d /data/mta/Script/OBT/*`;
+        if($input =~ /Test_sim/){
+                system("rm -rf /data/mta/Script/OBT/Test_sim/*");
+                system("mkdir  /data/mta/Script/OBT/Test_sim/house_keeping");
+                system("cp     /data/mta/Script/OBT/ACIS/house_keeping/Test_data/old_list /data/mta/Script/OBT/Test_sim/house_keeping/.");
+                system("cp     /data/mta/Script/OBT/ACIS/house_keeping/Test_data/sim_data_summary /data/mta/Script/OBT/Test_sim/house_keeping/.");
+                system("chmod 777 /data/mta/Script/OBT/Test_sim/house_keeping/*");
+        }else{
+                system("mkdir  /data/mta/Script/OBT/Test_sim");
+                system("mkdir  /data/mta/Script/OBT/Test_sim/house_keeping");
+                system("cp     /data/mta/Script/OBT/ACIS/house_keeping/Test_data/old_list /data/mta/Script/OBT/Test_sim/house_keeping/.");
+                system("cp     /data/mta/Script/OBT/ACIS/house_keeping/Test_data/sim_data_summary /data/mta/Script/OBT/Test_sim/house_keeping/.");
+                system("chmod 777 /data/mta/Script/OBT/Test_sim/house_keeping/*");
+        }
+}
 
 ##############################################################
 #
 #--- setting directories
 #
+if($comp_test =~ /test/i){
+	$dir_list = '/data/mta/Script/OBT/ACIS/house_keeping/dir_list_test';
+}else{
+	$dir_list = '/data/mta/Script/OBT/ACIS/house_keeping/dir_list';
+}
 
-$bin_dir       = '/data/mta/MTA/bin/';
-$data_dir      = '/data/mta/MTA/data/State_trends/';
-$web_dir       = '/data/mta/www/mta_states/ACIS/';
-$house_keeping = '/data/mta/Script/OBT/ACIS/house_keeping/';
-
-#$web_dir       = '/data/mta/www/mta_temp/mta_states_test/ACIS/';
-#$house_keeping = '/data/mta/Script/OBT/ACIS_test/house_keeping/';
-
+open(FH, $dir_list);
+while(<FH>){
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
+}   
+close(FH);
 ##############################################################
 
 #
@@ -37,23 +65,28 @@ system("rm ./systemlog");
 #--- find today's date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+if($comp_test =~ /test/i){
+	$diryear = 2013;
+	system("mkdir $web_dir/$diryear");
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-$diryear = 1900 + $uyear;
+	$diryear = 1900 + $uyear;
 
 #
 #---check whether we need a new directory or not
 #---this happens only once a year on Jan 2.
 #
 
-if($uyday ==  0) {
-        $last_year = $diryear - 1;
-        $last_file = "$web_dir"."/$last_year".'/sim_data_summary'."$last_year";
-        system("cat $data_dir/sim_header $house_keeping/sim_data_summary > $last_file");
-
-        system("rm $house_keeping/sim_data_summary");
-
-	system("mkdir $web_dir/$diryear");
+	if($uyday ==  0) {
+        	$last_year = $diryear - 1;
+        	$last_file = "$web_dir"."/$last_year".'/sim_data_summary'."$last_year";
+        	system("cat $data_dir/sim_header $house_keeping/sim_data_summary > $last_file");
+	
+        	system("rm $house_keeping/sim_data_summary");
+	
+		system("mkdir $web_dir/$diryear");
+	}
 }
 
 #
@@ -67,7 +100,11 @@ while(<FH>) {
 }
 close(FH);
 
-system("ls -rt /dsops/GOT/input/*Dump_EM*gz > new_list");
+if($comp_test =~ /test/i){
+        system("ls -rt //data/mta/Script/OBT/MJ/house_keeping/Test_data/*Dump_EM*gz > new_list");
+}else{
+	system("ls -rt /dsops/GOT/input/*Dump_EM*gz > new_list");
+}
 
 open(FH,'./new_list');
 while(<FH>) {
@@ -97,7 +134,7 @@ system("mv new_list                $house_keeping/old_list");
 #
 
 foreach $data (@data_list) {
-	system("/opt/local/bin/gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis2.scr -T -o");
+	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis2.scr -T -o");
 }
 
 system("cat acissimpos* > alldata");
@@ -202,7 +239,7 @@ $entry_no  = 0;
 @ACC_TSC   = ();
 @ACC_FA    = ();
 @HRLSB     = ();
-@LILSA     = ();
+@liLSA     = ();
 @LRLSBD    = ();
 @M28IRAX   = ();
 @M28IRBX   = ();
@@ -301,7 +338,7 @@ foreach $line (@clean_list) {
 		}else{
 			$value = 0;
 		}
-		push(@LILSA, $value);
+		push(@liLSA, $value);
 
 		$atemp[9] =~ s/^\s+//g;
 		if($atemp[9] eq "INSR") {
@@ -371,7 +408,7 @@ $s_COBSRQID = 0;
 $s_CCSDSTMF = 0;
 $s_HILSA    = 0;
 $s_HRLSB    = 0;
-$s_LILSA    = 0;
+$s_liLSA    = 0;
 $s_LRLSBD   = 0;
 $s_M28IRAX  = 0;
 $s_M28IRBX  = 0;
@@ -388,7 +425,7 @@ $COBSRQID_bin[0] = $COBSRQID[0];
 $CCSDSTMF_bin[0] = $CCSDSTMF[0];
 $HILSA_bin[0]    = $HILSA[0];
 $HILSB_bin[0]    = $HILSB[0];
-$LILSA_bin[0]    = $LILSA[0];
+$liLSA_bin[0]    = $liLSA[0];
 $LRLSBD_bin[0]   = $LRLSBD[0];
 $M28IRAX_bin[0]  = $M28IRAX[0];
 $M28IRBX_bin[0]  = $M28IRBX[0];
@@ -407,7 +444,7 @@ for($i = 1; $i < $count; $i++) {
 			$CCSDSTMF_bin[$mcnt] = 0;
 			$HILSA_bin[$mcnt]    = 0;
 			$HILSB_bin[$mcnt]    = 0;
-			$LILSA_bin[$mcnt]    = 0;
+			$liLSA_bin[$mcnt]    = 0;
 			$LRLSBD_bin[$mcnt]   = 0;
 			$M28IRAX_bin[$mcnt]  = 0;
 			$M28IRBX_bin[$mcnt]  = 0;
@@ -444,11 +481,11 @@ for($i = 1; $i < $count; $i++) {
 			make_it_int($HILSB_bin[$mcnt]);
 
 			$HILSB_bin[$mcnt] = $ivalue;
-			$LILSA_bin[$mcnt]    = $s_LILSA/$scnt;
+			$liLSA_bin[$mcnt]    = $s_liLSA/$scnt;
 
-			make_it_int($LILSA_bin[$mcnt]);
+			make_it_int($liLSA_bin[$mcnt]);
 
-			$LILSA_bin[$mcnt] = $ivalue;
+			$liLSA_bin[$mcnt] = $ivalue;
 			$LRLSBD_bin[$mcnt]   = $s_LRLSBD/$scnt;
 
 			make_it_int($LRLSBD_bin[$mcnt]);
@@ -487,7 +524,7 @@ for($i = 1; $i < $count; $i++) {
 		$s_CCSDSTMF  = $CCSDSTMF[$i];
 		$s_HILSA     = $HILSA[$i];
 		$s_HRLSB     = $HRLSB[$i];
-		$s_LILSA     = $LILSA[$i];
+		$s_liLSA     = $liLSA[$i];
 		$s_LRLSBD    = $LRLSBD[$i];
 		$s_M28IRAX   = $M28IRAX[$i];
 		$s_M28IRBX   = $M28IRBX[$i];
@@ -503,7 +540,7 @@ for($i = 1; $i < $count; $i++) {
 		$s_CCSDSTMF  = $s_CCSDSTMF + $CCSDSTMF[$i];
 		$s_HILSA     = $s_HILSA + $HILSA[$i];
 		$s_HRLSB     = $s_HRLSB + $HRLSB[$i];
-		$s_LILSA     = $s_LILSA + $LILSA[$i];
+		$s_liLSA     = $s_liLSA + $liLSA[$i];
 		$s_LRLSBD    = $s_LRLSBD + $LRLSBD[$i];
 		$s_M28IRAX   = $s_M28IRAX + $M28IRAX[$i];
 		$s_M28IRBX   = $s_M28IRBX + $M28IRBX[$i];
@@ -837,7 +874,7 @@ pgslw(2);
         $data_file = 'HILSA';
         $yt_axis   = '4HILSA';
         $xt_axis   = 'Time (DOM)';
-        $title     = 'MCE A: HETG LIMIT SWITCH 2A MONITOR (INSERTED)';
+        $title     = 'MCE A: HETG liMIT SWITCH 2A MONITOR (INSERTED)';
         @ybin      = @HILSA_bin;
 	$ymin      = -1.0;
 	$ymax      =  2.0;
@@ -846,17 +883,17 @@ pgslw(2);
         $data_file = 'HILSB';
         $yt_axis   = '4HILSB';
         $xt_axis   = 'Time (DOM)';
-        $title     = 'MCE B: HETG LIMIT SWITCH 2A MONITOR (INSERTED)';
+        $title     = 'MCE B: HETG liMIT SWITCH 2A MONITOR (INSERTED)';
         @ybin      = @HILSB_bin;
 	$ymin      = -1.0;
 	$ymax      =  2.0;
         plot_fig();
 
-        $data_file = 'LILSA';
-        $yt_axis   = '4LILSA';
+        $data_file = 'liLSA';
+        $yt_axis   = '4liLSA';
         $xt_axis   = 'Time (DOM)';
-        $title     = 'MCE A: LETG LIMIT SWITCH 2A MONITOR (INSERTED)';
-        @ybin      = @LILSA_bin;
+        $title     = 'MCE A: LETG liMIT SWITCH 2A MONITOR (INSERTED)';
+        @ybin      = @liLSA_bin;
 	$ymin      = -1.0;
 	$ymax      =  2.0;
         plot_fig();
@@ -864,7 +901,7 @@ pgslw(2);
         $data_file = 'LRLSBD';
         $yt_axis   = '4LRLSBD';
         $xt_axis   = 'Time (DOM)';
-        $title     = 'MCE B: LETG LIMIT SWITCH 1A MONITOR (RETRACTED)';
+        $title     = 'MCE B: LETG liMIT SWITCH 1A MONITOR (RETRACTED)';
         @ybin      = @LRLSBD_bin;
 	$ymin      = -1.0;
 	$ymax      =  2.0;
@@ -957,7 +994,7 @@ sub plot_fig {
 	$xstart2 = $xmin + 0.2*($xmax - $xmin);
 
 	if($data_file eq 'HILSA' || $data_file eq 'HILSB' 
-		|| $data_file eq 'LILSA' || $data_file eq 'LILSB'){
+		|| $data_file eq 'liLSA' || $data_file eq 'liLSB'){
 		pgtext($xstart,  1.5, '0: RETR');
 		pgtext($xstart2, 1.5, '1: INSR');
 	}
@@ -1099,43 +1136,54 @@ if ($uyear == 1999) {
 
 open(OUT, ">$web_dir/../sim.html");
 
-print OUT '<HTML>';
-
-print OUT '<BODY TEXT="#FFFFFF" BGCOLOR="#000000" LINK="#00CCFF" VLINK="#B6FFFF" ALINK="#FF0000">';
-print OUT "\n";
+print OUT "<!DOCTYPE html>\n";
+print OUT "<html>\n";
+print OUT "<head>\n";
 print OUT '<title> Abridged Summary of State Changes </title>';
+print OUT "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
+print OUT "<style  type='text/css'>\n";
+print OUT "table{text-align:center;margin-left:auto;margin-right:auto;border-style:solid;border-spacing:8px;border-width:2px;border-collapse:separate}\n";
+print OUT "a:link {color:#00CCFF;}\n";
+print OUT "a:visited {color:#B6FFFF;}\n";
+print OUT "</style>\n";
+print OUT "</head>\n";
+
+print OUT "<body style='color:#FFFFFF;background-color:#000000'>\n";
 print OUT "\n";
-print OUT '<CENTER><H1>Abridged Summary of State Changes</H1></CENTER>';
 print OUT "\n";
-print OUT '<CENTER><H1>Updated ';
+print OUT '<h1 style="text-align:center">Abridged Summary of State Changes</h1>';
+print OUT "\n";
+print OUT '<h1 style="text-align:center" >Updated ';
 print OUT "$uyear-$month-$umday  ";
 print OUT "\n";
-print OUT "<br>";
+print OUT "<br />";
 print OUT "DAY OF YEAR: $uyday ";
 print OUT "\n";
-print OUT "<br>";
+print OUT "<br />";
 print OUT "DAY OF MISSION: $dom ";
-print OUT '</H1></CENTER>';
+print OUT '</h1>';
 print OUT "\n";
-print OUT '<P>';
+print OUT '<div style="padding-top:10px;padding-bottom:10px">';
+print OUT '<hr />';
 print OUT "\n";
-print OUT '<HR>';
-print OUT "\n";
-print OUT '  <UL>';
+print OUT "</div>\n";
+print OUT '<ul>';
 print OUT "\n";
 
 for($hyear = 1999; $hyear <  $diryear+1; $hyear++){
         $htmname = 'year'."$hyear".'.html';
-        print OUT '<LI><A HREF="./ACIS/',"$htmname",'">Abridged Summary for Year ';
-        print OUT "$hyear",'</A></LI>',"\n";
+        print OUT '<li><a href="./ACIS/',"$htmname",'">Abridged Summary for Year ';
+        print OUT "$hyear",'</a></li>',"\n";
 }
 
-print OUT '</UL>';
+print OUT '</ul>';
 print OUT "\n";
-print OUT '<HR>';
-print OUT '    <A HREF="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Pag
-e</A>';
-print OUT '</P>';
+print OUT '<div style="padding-top:10px;padding-bottom:10px">';
+print OUT '<hr />';
+print OUT "</div>\n";
+print OUT '<a href="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Page</a>';
+print OUT "</body>\n";
+print OUT "</html>\n";
 close(OUT);
 
 #
@@ -1145,35 +1193,56 @@ close(OUT);
 $htmname = "$web_dir".'/year'."$diryear".'.html';
 open(OUT,">$htmname");
 
-print OUT '<BODY TEXT="#FFFFFF" BGCOLOR="#000000" LINK="#00CCFF" VLINK="#B6FFFF" ALINK="#FF0000">';
+print OUT "<!DOCTYPE html>\n";
+print OUT "<html>\n";
+print OUT "<head>\n";
+print OUT "<title> Comprehensive Summary </title>\n";
+print OUT "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
+print OUT "<style  type='text/css'>\n";
+print OUT "table{text-align:center;margin-left:auto;margin-right:auto;border-style:solid;border-spacing:8px;border-width:2px;border-collapse:separate}\n";
+print OUT "a:link {color:#00CCFF;}\n";
+print OUT "a:visited {color:B6FFFF;}\n";
+print OUT "</style>\n";
+print OUT "</head>\n";
+print OUT '<body style="color:#FFFFFF;background-color:#000000">';
+
 print OUT "\n";
 print OUT '<title> Abridged Summary </title>';
 print OUT "\n";
-print OUT '<CENTER><H1>Abridged Summary of State Changes</H1></CENTER>';
+print OUT '<h1 style="text-align:center">Abridged Summary of State Changes</h1>';
 
-print OUT '<HR>';
+print OUT "<div style='padding-top:10px;padding-bottom:10px'>\n";
+print OUT '<hr />';
 print OUT "\n";
+print OUT "</div>\n";
+print OUT "<p>\n";
 print OUT 'Please select one of the following reports:';
 print OUT "\n";
+print OUT "</p>\n";
 print OUT '';
 print OUT "\n";
-print OUT '  <UL>';
+print OUT '  <ul>';
 print OUT "\n";
-print OUT '    <LI><A HREF="./',"$diryear",'/sim_file.ps">SIM Positions</A></LI>';
+print OUT '    <li><a href="./',"$diryear",'/sim_file.ps">SIM Positions</a></li>';
 print OUT "\n";
-print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/fapos.ps">SEA FA Position; Details</A></LI>';
+print OUT '<li Type=square><a href="./',"$diryear",'/fapos.ps">SEA FA Position; Details</a></li>';
 print OUT "\n";
-print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/tscpos.ps"> SEA TSC POSITION; Details</A></LI>';
+print OUT '<li Type=square><a href="./',"$diryear",'/tscpos.ps"> SEA TSC POSITION; Details</a></li>';
 print OUT "\n";
-print OUT '    <LI Type=disk><A HREF="./',"$diryear",'/grating_file.ps">Grating Status</A></LI>';
+print OUT '    <li Type=disk><a href="./',"$diryear",'/grating_file.ps">Grating Status</a></li>';
 print OUT "\n";
-print OUT '    <LI Type=disk><A HREF="./',"$diryear",'/state_file.ps">Other Status</A></LI>';
+print OUT '    <li Type=disk><a href="./',"$diryear",'/state_file.ps">Other Status</a></li>';
 print OUT "\n";
+print OUT "</ul>\n";
 $sim_name = 'sim_data_summary'."$dirname";
-print OUT '    <LI Type=disk><A HREF="http://asc.harvard.edu/mta_days/mta_temp/ACIS/',"$diryear",'/'."$sim_name\">".'ASCII Data</A></LI>';
+print OUT "<div style='padding-top:10px;padding-bottom:10px'>\n";
+print OUT '<ul> <li Type=disk><a href="http://asc.harvard.edu/mta_days/mta_temp/ACIS/',"$diryear",'/'."$sim_name\">".'ASCII Data</a></li></ul>';
 print OUT "\n";
+print OUT "</div>\n";
 
-print OUT '  </UL><P>';
+print OUT "</body>\n";
+print OUT "</html>\n";
+
 
 close(OUT);
 }

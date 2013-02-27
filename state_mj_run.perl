@@ -14,20 +14,51 @@ use PGPLOT;					# pgplot package
 ###										###
 ###	Author: Takashi Isobe (tisobe@cfa.harvad.edu)				###
 ###										###
-###	Last Update: Oct 14, 2008						###
+###	Last Update: Jan 29, 2013						###
 ###										###
 ###################################################################################
+
+#
+#--- check whether this is a test case
+#
+
+$comp_test = $ARGV[0];
+chomp $comp_test;
+
+if($comp_test =~ /test/i){
+	$input = `ls -d /data/mta/Script/OBT/*`;
+	if($input =~ /Test_out/){
+		system("rm -rf /data/mta/Script/OBT/Test_out/*");
+		system("mkdir  /data/mta/Script/OBT/Test_out/house_keeping");
+		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/old_list /data/mta/Script/OBT/Test_out/house_keeping/.");
+		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/comprehensive_data_summary /data/mta/Script/OBT/Test_out/house_keeping/.");
+		system("chmod 777 /data/mta/Script/OBT/Test_out/house_keeping/*");
+	}else{
+		system("mkdir  /data/mta/Script/OBT/Test_out");
+		system("mkdir  /data/mta/Script/OBT/Test_out/house_keeping");
+		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/old_list /data/mta/Script/OBT/Test_out/house_keeping/.");
+		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/comprehensive_data_summary /data/mta/Script/OBT/Test_out/house_keeping/.");
+		system("chmod 777 /data/mta/Script/OBT/Test_out/house_keeping/*");
+	}
+}
 
 ##############################################################
 #
 #--- setting directories
 #
+if($comp_test =~ /test/i){
+	$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list_test';
+}else{
+	$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list';
+}
 
-$bin_dir       = '/data/mta/MTA/bin/';
-$data_dir      = '/data/mta/MTA/data/State_trends/';
-$web_dir       = '/data/mta/www/mta_states/MJ/';
-$house_keeping = '/data/mta/Script/OBT/MJ/house_keeping/';
-
+open(FH, $dir_list);
+while(<FH>){
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
+}   
+close(FH);
 ##############################################################
 
 #
@@ -41,23 +72,27 @@ system("rm ./systemlog");
 #--- find today's date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+if($comp_test =~ /test/i){
+	$diryear = 2013;
+       	system("mkdir $web_dir/$diryear"); 
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-$diryear = 1900 + $uyear;
-
+	$diryear = 1900 + $uyear;
 #
 #---check whether we need a new directory or not
 #---this happens only once a year on Jan 1.
 #
 
-if($uyday ==  0) {
-        $last_year  = $diryear - 1;
-        $last_file  = "$web_dir"."/$last_year".'/comprehensive_data_summary'."$last_year";
-        system("cat $data_dir/mj_header $house_keeping/comprehensive_data_summary~ > $last_file");
-
-        system("rm $house_keeping/comprehensive_data_summary");
-
-        system("mkdir $web_dir/$diryear"); 
+	if($uyday ==  0) {
+        	$last_year  = $diryear - 1;
+        	$last_file  = "$web_dir"."/$last_year".'/comprehensive_data_summary'."$last_year";
+        	system("cat $data_dir/mj_header $house_keeping/comprehensive_data_summary~ > $last_file");
+	
+        	system("rm $house_keeping/comprehensive_data_summary");
+	
+        	system("mkdir $web_dir/$diryear"); 
+	}
 }
 
 
@@ -72,7 +107,11 @@ while(<FH>) {
 }
 close(FH);
 
-system("ls -rt /dsops/GOT/input/*Dump_EM*gz > new_list");
+if($comp_test =~ /test/i){
+	system("ls -rt /data/mta/Script/OBT/MJ/house_keeping/Test_data/*Dump_EM*gz > new_list");
+}else{
+	system("ls -rt /dsops/GOT/input/*Dump_EM*gz > new_list");
+}
 
 @new_list = ();
 open(FH,'./new_list');
@@ -101,9 +140,8 @@ system("mv new_list                   $house_keeping/old_list");
 #
 #--- gzip a dump data and extract data we need for the plots
 #
-
 foreach $data (@data_list) {
-	system("/opt/local/bin/gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis.scr -T -o");
+	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis.scr -T -o");
 }
 
 system('cat mjsimpos* > alldata');
@@ -184,7 +222,9 @@ system("rm data_summary temp_data_summary mjsimpos*tl");
 #--- rcp to scrapper
 #
 
-system("rcp $web_dir/$diryear/$comp_file  scrapper:/pool14/chandra/acis_diag_support/");
+if($comp_test !~ /test/i){
+    system("rcp $web_dir/$diryear/$comp_file  scrapper:/pool14/chandra/acis_diag_support/");
+}
 
 system("mv $house_keeping/comprehensive_data_summary $house_keeping/comprehensive_data_summary~");
 system("mv comprehensive_data_summary                $house_keeping/comprehensive_data_summary");
@@ -1430,16 +1470,23 @@ sub print_html_page {
 #
 
 	open(OUT, ">$web_dir/../comprehensive.html");
+	print OUT "<!DOCTYPE html>\n";
+	print OUT "<html>\n";
+    print OUT "<head>\n";
+	print OUT "<title> Comprehensive Summary </title>\nr";
+    print OUT "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
+    print OUT "<style  type='text/css'>\n";
+    print OUT "table{text-align:center;margin-left:auto;margin-right:auto;border-style:solid;border-spacing:8px;border-width:2px;border-collapse:separate}\n";
+    print OUT "a:link {color:#00CCFF;}\n";
+    print OUT "a:visited {color:#B6FFFF;}\n";
+    print OUT "</style>\n";
+    print OUT "</head>\n";
 	
-	print OUT '<HTML>';
-	
-	print OUT '<BODY TEXT="#FFFFFF" BGCOLOR="#000000" LINK="#00CCFF" VLINK="#B6FFFF" ALINK="#FF0000">';
+	print OUT '<body  style="color:#FFFFFF;background-color:#000000">';
 	print OUT "\n";
-	print OUT '<title> Comprehensive Summary </title>';
+	print OUT '<h1 style="text-align:center">Comprehensive Summary of State Changes</h1>';
 	print OUT "\n";
-	print OUT '<CENTER><H1>Comprehensive Summary of State Changes</H1></CENTER>';
-	print OUT "\n";
-	print OUT '<CENTER><H1>Updated ';
+	print OUT '<h1 style="text-align:center">Updated ';
 	print OUT "$uyear-$month-$umday  ";
 	print OUT "\n";
 	print OUT "<br>";
@@ -1447,24 +1494,28 @@ sub print_html_page {
 	print OUT "\n";
 	print OUT "<br>";
 	print OUT "DAY OF MISSION: $dom ";
-	print OUT '</H1></CENTER>';
+	print OUT '</h1>';
 	print OUT "\n";
-	print OUT '<P>';
-	print OUT '<HR>';
-	print OUT '  <UL>';
+	print OUT '<hr /> ';
+    print OUT "<div style='padding-top:20px;padding-bottom:20px;'>\n";
+	print OUT '  <ul>';
 	print OUT "\n";
 	
 	for($hyear = 1999; $hyear <  $diryear+1; $hyear++){
 		$htmname = 'year'."$hyear".'.html';
-		print OUT '<LI><A HREF="./MJ/',"$htmname",'">Comprihensive Summary for Year ';
-		print OUT "$hyear",'</A></LI>',"\n";
+		print OUT '<li><a href="./MJ/',"$htmname",'">Comprihensive Summary for Year ';
+		print OUT "$hyear",'</a></li>',"\n";
 	}
 	
-	print OUT '</UL>';
+	print OUT '</ul>';
 	print OUT "\n";
-	print OUT '<HR>';
-	print OUT '    <A HREF="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Page</A>';
-	print OUT '</P>';
+    print OUT "</div>\n";
+	print OUT '<hr />';
+    print OUT "<p style='padding-top:10px;'>\n";
+	print OUT '    <a href="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Page</a>';
+	print OUT '</p>';
+	print OUT "</body>\n";
+	print OUT "</html>\n";
 	
 	close(OUT);
 
@@ -1474,61 +1525,75 @@ sub print_html_page {
 
 	$htmname = "$web_dir".'/year'."$diryear".'.html';
 	open(OUT,">$htmname");
-	
-	print OUT '<BODY TEXT="#FFFFFF" BGCOLOR="#000000" LINK="#00CCFF" VLINK="#B6FFFF" ALINK="#FF0000">';
+
+    print OUT "<!DOCTYPE html>\n";
+    print OUT "<html>\n";
+    print OUT "<head>\n";
+	print OUT "<title> Comprehensive Summary </title>\n";
+    print OUT "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
+    print OUT "<style  type='text/css'>\n";
+    print OUT "table{text-align:center;margin-left:auto;margin-right:auto;border-style:solid;border-spacing:8px;border-width:2px;border-collapse:separate}\n";
+    print OUT "a:link {color:#00CCFF;}\n";
+    print OUT "a:visited {color:B6FFFF;}\n";
+    print OUT "</style>\n";
+    print OUT "</head>\n";
+	print OUT '<body style="color:#FFFFFF;background-color:#000000">';
 	print OUT "\n";
-	print OUT '<title> Comprehensive Summary </title>';
 	print OUT "\n";
-	print OUT '<CENTER><H1>Comprehensive Summary of State Changes</H1></CENTER>';
+	print OUT '<h1 style="text-align:center;">Comprehensive Summary of State Changes</h1>',"\n";
 	
-	print OUT '<HR>';
+	print OUT '<hr />';
 	print OUT "\n";
 	print OUT 'Please select one of the following reports:';
 	print OUT "\n";
 	print OUT '';
 	print OUT "\n";
-	print OUT '  <UL>';
+	print OUT '  <ul>';
 	print OUT "\n";
-	print OUT '    <LI><A HREF="./',"$diryear",'/acis_file.ps">ACIS Temperature</A></LI>';
+	print OUT '    <li><a href="./',"$diryear",'/acis_file.ps">ACIS Temperature</a></li>';
 	print OUT "\n";
-	print OUT '    <LI><A HREF="./',"$diryear",'/sim_file.ps">SIM Positions</A></LI>';
+	print OUT '    <li><a href="./',"$diryear",'/sim_file.ps">SIM Positions</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/fapos.ps">SEA FA Position; Details</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/fapos.ps">SEA FA Position; Details</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/tscpos.ps"> SEA TSC POSITION; Details</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/tscpos.ps"> SEA TSC POSITION; Details</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/acc_sim_file.ps"> INTEGRATED SIM POSITIONS</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/acc_sim_file.ps"> INTEGRATED SIM POSITIONS</a></li>';
 	print OUT "\n";
-	print OUT '    <LI Type=disk>Grating Positions</A></LI>';
+	print OUT '<li Type=disk>Grating Positions</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/4hposaro.ps">HETG ROTATION ANGLE POSITION MONITOR A</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/4hposaro.ps">HETG ROTATION ANGLE POSITION MONITOR A</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/4hposbro.ps">HETG ROTATION ANGLE POSITION MONITOR B</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/4hposbro.ps">HETG ROTATION ANGLE POSITION MONITOR B</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/lteg_file.ps">LETG ROTAION ANGLE POSITION MONITOR</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/lteg_file.ps">LETG ROTAION ANGLE POSITION MONITOR</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="../ACIS/',"$diryear",'/grating_file.ps">Grating Interlocks</A></L>';
+	print OUT '<li Type=square><a href="../ACIS/',"$diryear",'/grating_file.ps">Grating Interlocks</a></li>';
 	print OUT "\n";
-	print OUT '    <LI Type=disk><A HREF="./',"$diryear",'/pcad_file.ps">PCAD mode</A></LI>';
+	print OUT '<li Type=disk><a href="./',"$diryear",'/pcad_file.ps">PCAD mode</a></li>';
 	print OUT "\n";
-	print OUT '<DD>    <LI Type=square><A HREF="./',"$diryear",'/acc_pcad_file.ps">PCAD modes: Integreated Time</A></LI>';
+	print OUT '<li Type=square><a href="./',"$diryear",'/acc_pcad_file.ps">PCAD modes: Integreated Time</a></li>';
 	print OUT "\n";
-	print OUT ' 	<LI Type=disk><A HREF="../ACIS/',"$diryear",'/rad_mon.ps">RAD MON Process State</A></L>';
+	print OUT '<li Type=disk><a href="../ACIS/',"$diryear",'/rad_mon.ps">RAD MON Process State</a></li>';
 	print OUT "\n";
-	print OUT '    <LI Type=disk><A HREF="./',"$diryear",'/state_file.ps">Other Status</A></LI>';
+	print OUT '<li Type=disk><a href="./',"$diryear",'/state_file.ps">Other Status</a></li>';
 	print OUT "\n";
-	print OUT '<HR>';
-	print OUT "\n";
+    print OUT "</ul>\n";
+    print OUT "<div style='padding-top:15px;padding-bottom:15px;'>\n";
+	print OUT "<hr />\n";
+	print OUT "</div>\n";
 	
 	$htm_file = 'comprehensive_data_summary'."$diryear";
 	
-	print OUT '    <LI Type=disk><A HREF="./',"$diryear",'/',"$htm_file",'">ASCII Data</A></LI>';
+	print OUT '<ul><li Type=disk><a href="./',"$diryear",'/',"$htm_file",'">ASCII Data</a></li></ul>';
 	print OUT "\n";
-	print OUT '<HR>';
-	print OUT "\n";
+    print OUT "<div style='padding-top:15px;padding-bottom:25px;'>\n";
+	print OUT "<hr />\n";
+	print OUT "<div>\n";
 	
-	print OUT '    <A HREF="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Page</A>';
-	print OUT '  </UL><P>';
+	print OUT '<a href="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Page</a>';
+    print OUT "</body>\n";
+    print OUT "</html>\n";
 	
 	close(OUT);
 }

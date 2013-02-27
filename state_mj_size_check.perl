@@ -7,7 +7,7 @@
 #										#
 #		author: t. isobe (tiosbe@cfa.harvard.edu)			#
 #										#
-#		last update: Oct 14, 2008					#
+#		last update: Aug 24, 2012					#
 #										#
 #################################################################################
 
@@ -15,12 +15,14 @@
 #
 #--- setting directories
 #
-
-$bin_dir       = '/data/mta/MTA/bin/';
-$data_dir      = '/data/mta/MTA/data/';
-$web_dir       = '/data/mta/www/mta_states/MJ/';
-$house_keeping = '/data/mta/Script/OBT/MJ/house_keeping/';
-
+$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list';
+open(FH, $dir_list);
+while(<FH>){
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
+}   
+close(FH);
 ##############################################################
 
 system("ls -l $house_keeping/comprehensive_data_summary* > zsize");
@@ -50,7 +52,7 @@ if($size[0] < $size[1]) {
 	print FILE "$year/mta_comprehensive_data_summary$year\n";
 	close FILE;
 
-	system("/opt/local/bin/mh/send -draftmessage /tmp/mjmail.tmp");
+#	system("/opt/local/bin/mh/send -draftmessage /tmp/mjmail.tmp");
 	system("cat /tmp/mjmail.tmp | mailx -s \"Subject: MJ summary problem detected !!\n \" -r  isobe\@head.cfa.harvard.edu  isobe\@head.cfa.harvard.edu ");
 
 	system("rm /tmp/mjmail.tmp");

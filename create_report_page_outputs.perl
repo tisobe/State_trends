@@ -6,7 +6,7 @@
 #														#
 #		author: t. isobe (tisobe@cfa.harvard.edu)							#
 #														#
-#		last update: Mar 23, 2011									#
+#		last update: Aug 24, 2012									#
 #														#
 #################################################################################################################	
 
@@ -15,13 +15,14 @@
 #
 #--- setting directories
 #
-
-$bin_dir         = '/data/mta/MTA/bin/';
-$data_dir        = '/data/mta/MTA/data/State_trends/';
-$web_dir         = '/data/mta/www/mta_states/';
-$house_keepingmj = '/data/mta/Script/OBT/MJ/house_keeping/';
-$house_keepingac = '/data/mta/Script/OBT/ACIS/house_keeping/';
-
+$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list';
+open(FH, $dir_list);
+while(<FH>){
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
+}
+close(FH);
 ##############################################################
 
 system("rm $web_dir/mta_comprehensive_data_summary"); 
