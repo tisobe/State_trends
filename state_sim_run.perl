@@ -8,7 +8,7 @@ use PGPLOT;
 #											#
 #		 author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update Jan 29, 2013						#
+#		last update Mar 19, 2013						#
 #											#
 #########################################################################################
 
@@ -134,20 +134,53 @@ system("mv new_list                $house_keeping/old_list");
 #
 
 foreach $data (@data_list) {
-	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis2.scr -T -o");
+#	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis2.scr -T -o");
+	system("gzip -dc $data > ./temp_file");
+	system(" acorn -f ./temp_file  -nCO $data_dir/simpos_acis2.scr -T -o ");
+	system("rm ./temp_file");
 }
 
 system("cat acissimpos* > alldata");
+
+open(FH, "./alldata");
+open(OUT, ">./alldatatemp");
+$i = 0;
+OUTER:
+while(<FH>){
+	chomp $_;
+	if($_ =~ /TIME/i && $i == 0){
+		@atemp = split(/\s+/, $_);
+		$total= 0;
+		foreach(@atemp){
+			$total++;
+		}
+		$i = 1;
+		print OUT "$_\n";
+		next OUTER;
+	}
+		
+	@atemp = split(/\s+/, $_);
+	$cnt = 0;
+	foreach(@atemp){
+		$cnt++;
+	}
+	if($cnt == $total){
+		print OUT "$_\n";
+	}
+}
+close(OUT);
+close(FH);
 
 #
 #--- remove headers
 #
 
-system("sed -f $data_dir/sim_sedscript1 alldata > alldata_cleaned");
+system("sed -f $data_dir/sim_sedscript1 alldatatemp > alldata_cleaned");
 
 system("sort alldata_cleaned > alldata_cleaned_sorted");
 
-system("nawk -F\"\\t\" -f $data_dir/sim_nawkscript alldata_cleaned_sorted       > alldata_cleaned_sorted_timed");
+#system("nawk -F\"\\t\" -f $data_dir/sim_nawkscript alldata_cleaned_sorted       > alldata_cleaned_sorted_timed");
+system("gawk -F\"\\t\" -f $bin_dir/sim_nawkscript alldata_cleaned_sorted       > alldata_cleaned_sorted_timed");
 system("cat $house_keeping/sim_data_summary alldata_cleaned_sorted_timed > ./data_summary");
 
 system("rm alldata*");

@@ -1,1 +1,1 @@
-/bin/tcsh  < /data/mta/MTA/bin/state_sim_script
+/bin/tcsh  < /data/mta/Script/OBT/State_trends/state_sim_script

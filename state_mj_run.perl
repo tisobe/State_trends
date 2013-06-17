@@ -14,7 +14,7 @@ use PGPLOT;					# pgplot package
 ###										###
 ###	Author: Takashi Isobe (tisobe@cfa.harvad.edu)				###
 ###										###
-###	Last Update: Jan 29, 2013						###
+###	Last Update: Mar 19, 2013						###
 ###										###
 ###################################################################################
 
@@ -141,16 +141,48 @@ system("mv new_list                   $house_keeping/old_list");
 #--- gzip a dump data and extract data we need for the plots
 #
 foreach $data (@data_list) {
-	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis.scr -T -o");
+#	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis.scr -T -o");
+	system("gzip -dc $data > ./temp_file");
+	system("acorn -f ./temp_file  -nCO $data_dir/simpos_acis.scr -T -o");
+	system("rm ./temp_file");
 }
 
 system('cat mjsimpos* > alldata');
+open(FH, "./alldata");
+open(OUT, ">./alldatatemp");
+$i = 0;
+OUTER:
+while(<FH>){
+        chomp $_;
+        if($_ =~ /TIME/i && $i == 0){
+                @atemp = split(/\s+/, $_);
+                $total= 0;
+                foreach(@atemp){
+                        $total++;
+                }
+                $i = 1;
+                print OUT "$_\n";
+                next OUTER;
+        }
+                
+        @atemp = split(/\s+/, $_);
+        $cnt = 0;
+        foreach(@atemp){
+                $cnt++;
+        }
+        if($cnt == $total){
+                print OUT "$_\n";
+        }
+}
+close(OUT);
+close(FH);
+
 
 #
 #--- remove headers
 #
 
-system("sed -f $data_dir/mj_sedscript1 alldata > alldata_cleaned");
+system("sed -f $data_dir/mj_sedscript1 alldatatemp > alldata_cleaned");
 
 @data = ();
 open(FH,'./alldata_cleaned');
@@ -174,7 +206,8 @@ close(OUT);
 #--- change format
 #
 
-system("nawk -F\"\\t\" -f $data_dir/mj_nawkscript alldata_cleaned_sorted > alldata_cleaned_sorted_timed");
+#system("nawk -F\"\\t\" -f $data_dir/mj_nawkscript alldata_cleaned_sorted > alldata_cleaned_sorted_timed");
+system("gawk -F\"\\t\" -f $bin_dir/mj_nawkscript alldata_cleaned_sorted > alldata_cleaned_sorted_timed");
 
 system("cat $house_keeping/comprehensive_data_summary alldata_cleaned_sorted_timed > ./data_summary");
 
@@ -219,11 +252,11 @@ system("cat $data_dir/mj_header comprehensive_data_summary > $web_dir/$diryear/$
 system("rm data_summary temp_data_summary mjsimpos*tl");
 
 #
-#--- rcp to scrapper
+#--- cp to  a pool area
 #
 
 if($comp_test !~ /test/i){
-    system("rcp $web_dir/$diryear/$comp_file  scrapper:/pool14/chandra/acis_diag_support/");
+####    system("cp $web_dir/$diryear/$comp_file  /pool14/chandra/acis_diag_support/");
 }
 
 system("mv $house_keeping/comprehensive_data_summary $house_keeping/comprehensive_data_summary~");
@@ -467,7 +500,7 @@ foreach $line (@clean_list) {
 			push(@acc_rman, $null);
 			push(@acc_stby, $null);
 		}
-		push(AOPCADMD, $pvalue);
+		push(@AOPCADMD, $pvalue);
 		$entry_no++;
 	}
 }
