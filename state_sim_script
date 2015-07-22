@@ -4,12 +4,6 @@ rm -rf param
 mkdir param
 source /home/mta/bin/reset_param
 
-unsetenv PERLLIB
-unsetenv PERL5LIB
-
-set path = (/home/ascds/DS.release/bin/  $path)
-set path = (/home/ascds/DS.release/ots/bin/ $path)
-
 /usr/local/bin/perl  /data/mta/Script/OBT/State_trends/state_sim_run.perl
 
 

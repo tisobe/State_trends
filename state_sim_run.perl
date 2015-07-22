@@ -8,7 +8,7 @@ use PGPLOT;
 #											#
 #		 author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update Mar 19, 2013						#
+#		last update Mar 16, 2015						#
 #											#
 #########################################################################################
 
@@ -124,7 +124,24 @@ foreach $entry (@new_list) {
 	push(@data_list, $entry);
 }
 
-system("mv $house_keeping/old_list $house_keeping/old_list~");
+#--- added 03/09/15 ------#
+$test      = `ls $house_keeping`;
+@test_list = split(/\n+/, $test);
+$chk       = 0;
+foreach $ent (@test_list){
+    if($ent =~ /old_list/){
+        if($ent =~ /\~/){
+            last;
+        }else{
+            $chk = 1;
+            last;
+        }
+    }
+}
+if($chk == 1){
+#-------------------------#
+    system("mv $house_keeping/old_list $house_keeping/old_list~");
+}
 system("mv new_list                $house_keeping/old_list");
 
 @data_list = sort (@data_list);
