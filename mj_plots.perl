@@ -3,54 +3,21 @@ use PGPLOT;					# pgplot package
 
 ###################################################################################
 ###										###
-###			state_mj_run.perl					###
-###	this script gets information from /dsops/GOT/input/.. dump data		###
+###			mj_plot.perl					###
+###	this script plots a yearly trend for a given year			###
 ###	and monitoring trend of key data.					###
-###										###
-###	Usage:		perl  run_mj_list.perl					###
-###										###
-###	Output:									###
-###		postscript files for the trend plots				###
 ###										###
 ###	Author: Takashi Isobe (tisobe@cfa.harvad.edu)				###
 ###										###
-###	Last Update: Apr 10, 2017						###
+###	Last Update: Apr 11, 2017						###
 ###										###
 ###################################################################################
-
-#
-#--- check whether this is a test case
-#
-
-$comp_test = $ARGV[0];
-chomp $comp_test;
-
-if($comp_test =~ /test/i){
-	$input = `ls -d /data/mta/Script/OBT/*`;
-	if($input =~ /Test_out/){
-		system("rm -rf /data/mta/Script/OBT/Test_out/*");
-		system("mkdir  /data/mta/Script/OBT/Test_out/house_keeping");
-		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/old_list /data/mta/Script/OBT/Test_out/house_keeping/.");
-		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/comprehensive_data_summary /data/mta/Script/OBT/Test_out/house_keeping/.");
-		system("chmod 777 /data/mta/Script/OBT/Test_out/house_keeping/*");
-	}else{
-		system("mkdir  /data/mta/Script/OBT/Test_out");
-		system("mkdir  /data/mta/Script/OBT/Test_out/house_keeping");
-		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/old_list /data/mta/Script/OBT/Test_out/house_keeping/.");
-		system("cp     /data/mta/Script/OBT/MJ/house_keeping/Test_data/comprehensive_data_summary /data/mta/Script/OBT/Test_out/house_keeping/.");
-		system("chmod 777 /data/mta/Script/OBT/Test_out/house_keeping/*");
-	}
-}
 
 ##############################################################
 #
 #--- setting directories
 #
-if($comp_test =~ /test/i){
-	$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list_test';
-}else{
-	$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list';
-}
+$dir_list = '/data/mta/Script/OBT/MJ/house_keeping/dir_list';
 
 open(FH, $dir_list);
 while(<FH>){
@@ -61,216 +28,12 @@ while(<FH>){
 close(FH);
 ##############################################################
 
-#
-#--- remove the past system log
-#
+$diryear = $ARGV[0];
+chomp $diryear;
 
-system("rm ./systemlog");
+$file = "$web_dir/$diryear/comprehensive_data_summary$diryear";
 
-
-#
-#--- find today's date
-#
-
-if($comp_test =~ /test/i){
-	$diryear = 2013;
-       	system("mkdir $web_dir/$diryear"); 
-}else{
-	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
-
-	$diryear = 1900 + $uyear;
-#
-#---check whether we need a new directory or not
-#---this happens only once a year on Jan 1.
-#
-
-	if($uyday ==  0) {
-        	$last_year  = $diryear - 1;
-        	$last_file  = "$web_dir"."/$last_year".'/comprehensive_data_summary'."$last_year";
-        	system("cat $data_dir/mj_header $house_keeping/comprehensive_data_summary~ > $last_file");
-	
-        	system("rm $house_keeping/comprehensive_data_summary");
-	
-        	system("mkdir $web_dir/$diryear"); 
-	}
-}
-
-
-#
-#--- find which data file are already processed, and make a list of un-processed data
-#
-
-open(FH, "$house_keeping/old_list");
-while(<FH>) {
-	chomp $_;
-	push(@old_list, $_);
-}
-close(FH);
-
-if($comp_test =~ /test/i){
-	system("ls -rt /data/mta/Script/OBT/MJ/house_keeping/Test_data/*Dump_EM*gz > new_list");
-}else{
-	system("ls -rt /dsops/GOT/input/*Dump_EM*gz > new_list");
-}
-
-@new_list = ();
-open(FH,'./new_list');
-while(<FH>) {
-	chomp $_;
-	push(@new_list, $_);
-}
-close(FH);
-
-@data_list = ();
-OUTER:
-foreach $entry (@new_list) {
-        foreach $comp (@old_list) {
-                if($entry eq $comp) {
-                        next OUTER;
-                }
-        }
-        push(@data_list, $entry);
-}
-
-system("mv $house_keeping/old_list    $house_keeping/old_list~");
-system("mv new_list                   $house_keeping/old_list");
-
-@data_list = sort (@data_list);
-
-#
-#--- gzip a dump data and extract data we need for the plots
-#
-foreach $data (@data_list) {
-#	system("gzip -dc $data| $bin_dir/acorn -nCO $data_dir/simpos_acis.scr -T -o");
-	system("gzip -dc $data > ./temp_file");
-	system("acorn -f ./temp_file  -nCO $data_dir/simpos_acis.scr -T -o");
-	system("rm ./temp_file");
-}
-
-system('cat mjsimpos* > alldata');
-open(FH, "./alldata");
-open(OUT, ">./alldatatemp");
-$i = 0;
-OUTER:
-while(<FH>){
-        chomp $_;
-        if($_ =~ /TIME/i && $i == 0){
-                @atemp = split(/\s+/, $_);
-                $total= 0;
-                foreach(@atemp){
-                        $total++;
-                }
-                $i = 1;
-                print OUT "$_\n";
-                next OUTER;
-        }
-                
-        @atemp = split(/\s+/, $_);
-        $cnt = 0;
-        foreach(@atemp){
-                $cnt++;
-        }
-        if($cnt == $total){
-                print OUT "$_\n";
-        }
-}
-close(OUT);
-close(FH);
-
-
-#
-#--- remove headers
-#
-
-system("sed -f $data_dir/mj_sedscript1 alldatatemp > alldata_cleaned");
-
-@data = ();
-open(FH,'./alldata_cleaned');
-
-while(<FH>){
-        chomp $_;
-        push(@data, $_);
-}
-close(FH);
-
-@adata = sort @data;
-
-open(OUT,">./alldata_cleaned_sorted");
-
-foreach $ent (@adata){
-        print OUT "$ent\n";;
-}
-close(OUT);
-
-#
-#--- change format
-#
-
-#system("nawk -F\"\\t\" -f $data_dir/mj_nawkscript alldata_cleaned_sorted > alldata_cleaned_sorted_timed");
-system("gawk -F\"\\t\" -f $bin_dir/mj_nawkscript alldata_cleaned_sorted > alldata_cleaned_sorted_timed");
-
-system("cat $house_keeping/comprehensive_data_summary alldata_cleaned_sorted_timed > ./data_summary");
-
-#
-#--- save alldata_cleaned_sorted_timed for focal plane computation
-#
-
-system("mv alldata_cleaned_sorted_timed todays_data");
-
-system("rm alldata*");
-
-open(FH,'./data_summary');
-@data = ();
-
-while(<FH>){
-        chomp $_;
-        push(@data, $_);
-}
-close(FH);
-
-@adata = sort @data;
-
-open(OUT,">./temp_data_summary");
-
-foreach $ent (@adata){
-        print OUT "$ent\n";;
-}
-close(OUT);
-
-#
-#-- clearning up the comprehensive_data_summary file
-#
-
-rm_dupl();			
-
-#
-#--- moidfy the data file for web page and save it
-#
-
-$comp_file = 'comprehensive_data_summary'."$diryear";
-system("cat $data_dir/mj_header comprehensive_data_summary > $web_dir/$diryear/$comp_file");
-system("rm data_summary temp_data_summary mjsimpos*tl");
-
-#
-#--- cp to  a pool area
-#
-
-if($comp_test !~ /test/i){
-####    system("cp $web_dir/$diryear/$comp_file  /pool14/chandra/acis_diag_support/");
-}
-
-system("mv $house_keeping/comprehensive_data_summary $house_keeping/comprehensive_data_summary~");
-system("mv comprehensive_data_summary                $house_keeping/comprehensive_data_summary");
-
-
-
-#
-#---- plottting preparation starting here
-#
-
-
-
-open(FH, "$house_keeping/comprehensive_data_summary");
+open(FH, "$file");
 
 $count = 0;
 while(<FH>) {
@@ -280,26 +43,7 @@ while(<FH>) {
 }
 close(FH);
 
-#
-#--- remove duplicated lines
-#
-
-@data_list  = sort (@temp_list);
-
-$count      = 0;
-$line       = shift(@data_list);
-@clean_list = ("$line");
-
-foreach $comp (@data_list) {
-	unless($comp eq $line) {
-		push(@clean_list, $line);
-	}
-	$line = $comp;
-}
-
-#
-#--- read a header file to get msids
-#
+print "I AM HERE1\n";
 
 $list  = `cat $data_dir/mj_header`;
 @title =  split(/\s+/, $list);
@@ -335,7 +79,14 @@ $pvalue    = 1000;
 $entry_no  = 0;
 $null      = 0;
 
-foreach $line (@clean_list) {
+OUTER:
+foreach $line (@temp_list) {
+	if($line =~ /TIME/i){
+		next OUTER;
+	}elsif($line eq ''){
+		next OUTER;
+	}
+
 	@atemp = split(/\t+/, $line);
 	@btemp = split(/:/,   $atemp[0]);
 
@@ -500,10 +251,11 @@ foreach $line (@clean_list) {
 			push(@acc_rman, $null);
 			push(@acc_stby, $null);
 		}
-		push(@AOPCADMD, $pvalue);
+		push(AOPCADMD, $pvalue);
 		$entry_no++;
 	}
 }
+print "I AM HERE2\n";
 
 @x_data = ();
 @y_data = ();
@@ -518,6 +270,7 @@ foreach $x (@time_line) {
 	push(@x_data, $xb);
 }
 
+print "I AM HERE3\n";
 $mcnt       = 0;
 $scnt       = 0;
 $s_TSCPOS   = 0;
@@ -691,6 +444,7 @@ for($i = 1; $i < $count; $i++) {
 }
 $count_save = $count;
 $count      = $mcnt;		
+print "I AM HERE4\n";
 
 #
 #--- setting plot min max
@@ -702,6 +456,7 @@ $xmin       = 0;
 while($xmin == 0) {
 	$xmin = shift(@xtemp);
 }
+print "I AM HERE5\n";
 
 $xmax = pop(@xtemp);
 
@@ -712,8 +467,8 @@ $yskip = 0;
 #--- ACIS
 #
 
-pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgbegin(0, "/cps",1,1);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
 	$data_file = '1CRAT';
@@ -737,7 +492,10 @@ pgslw(2);
 	plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/acis_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/acis_file.gif");
+system("rm -rf pgplot.*");
+
 
 #
 #--- Grating
@@ -778,7 +536,9 @@ pgslw(2);
 	plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/4hposaro.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/4hposaro.gif");
+system("rm -rf pgplot.*");
 
 pgbegin(0, "/ps",1,1);
 pgsubp(1,3);
@@ -815,11 +575,13 @@ pgslw(2);
 	plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/4hposbro.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/4hposbro.gif");
+system("rm -rf pgplot.*");
 
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
 	$data_file = '4LPOSARO';
@@ -843,14 +605,16 @@ pgslw(2);
 	plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/lteg_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/lteg_file.gif");
+system("rm -rf pgplot.*");
 
 #
 #--- SIM
 #
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
 	$data_file = '3FAPOS';
@@ -873,6 +637,17 @@ pgslw(2);
 
 	plot_fig();
 
+pgclos();
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/sim_file-0.gif");
+system("rm -rf pgplot.*");
+
+
+pgbegin(0, "/ps",1,1);
+pgsubp(1,3);
+pgsch(2);
+pgslw(2);
+
 	$data_file = '7FAPOS';
 	$yt_axis   = '7FAPOS (step)';
 	$xt_axis   = 'Time (DOM)';
@@ -894,10 +669,12 @@ pgslw(2);
 	plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/sim_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/sim_file-1.gif");
+system("rm -rf pgplot.*");
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
         $data_file = 'ACC_TSC';
@@ -921,10 +698,14 @@ pgslw(2);
         plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/acc_sim_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/acc_sim_file.gif");
+system("rm -rf pgplot.*");
+
+#----------------------------------------------------------------
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,5);
+pgsubp(1,3);
 pgsch(3);
 pgslw(2);
 
@@ -990,10 +771,25 @@ $yskip  = 1;
         }
 
 	pgslw(2);
+	    $xt_axis = 'Time (DOM)';
+        pglabel("$xt_axis", "", "");
         pgtext($xstart, 2.385e4, 'SEA TSC POSITION: 2.30e4~2.40e4');
 	
-	$title = 'SEA TSC POSITION:-5.0e4~-5.1e4';
 
+	
+pgclos();
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/tscpos-0.gif");
+system("rm -rf pgplot.*");
+
+
+
+pgbegin(0, "/ps",1,1);
+pgsubp(1,3);
+pgsch(3);
+pgslw(2);
+
+	$title = 'SEA TSC POSITION:-5.0e4~-5.1e4';
 	$ymin  = -5.1e4;
 	$ymax  = -5.0e4;
 
@@ -1031,10 +827,14 @@ $yskip  = 1;
         pgtext($xstart, -9.915e4, 'SEA TSC POSITION: -1.00e5~-0.99e5');
 	
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/tscpos.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/tscpos-1.gif");
+system("rm -rf pgplot.*");
+
+#----------------------------------------------------------------------------
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,5);
+pgsubp(1,3);
 pgsch(3);
 pgslw(2);
 	$data_file = '3FAPOS';
@@ -1082,7 +882,7 @@ pgslw(2);
 
 	$ymin    = -4.68e2;
 	$ymax    = -4.66e2;
-	$xt_axis = '';
+    $xt_axis = 'Time (DOM)';
 
         pgpage;
         pgswin($xmin, $xmax, $ymin, $ymax);
@@ -1095,7 +895,18 @@ pgslw(2);
         }
 
 	pgslw(2);
+        pglabel("$xt_axis", "", "");
+
         pgtext($xstart, -4.662e2, 'SEA FA POSITION: -4.68e2~-4.66e2');
+pgclos();
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/fapos-0.gif");
+system("rm -rf pgplot.*");
+
+pgbegin(0, "/ps",1,1);
+pgsubp(1,3);
+pgsch(3);
+pgslw(2);
 
 	$title   = 'SEA FA POSITION:-5.95e2~-5.93e2';
 	$ymin    = -5.95e2;
@@ -1130,11 +941,13 @@ pgslw(2);
                 pgpt(1, $xbin[$i], $ybin[$i], -1);
         }
 	pgslw(2);
-        pglabel("xt_axis", "", "");
+        pglabel("$xt_axis", "", "");
         pgtext($xstart, -8.982e2, 'SEA FA POSITION: -9.00e2~-8.98e2');
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/fapos.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/fapos-1.gif");
+system("rm -rf pgplot.*");
 
 $yskip = 0;
 
@@ -1143,7 +956,7 @@ $yskip = 0;
 #
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
 
@@ -1169,6 +982,8 @@ pgslw(2);
 
         plot_fig();
 
+
+
         $data_file = 'CORADMEN';
         $yt_axis   = 'CORADMEN';
         $xt_axis   = 'Time (DOM)';
@@ -1179,6 +994,16 @@ pgslw(2);
 	$ymax      = 2.0;
 
         plot_fig();
+
+pgclos();
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/state_file-0.gif");
+system("rm -rf pgplot.*");
+
+pgbegin(0, "/ps",1,1);
+pgsubp(1,3);
+pgsch(2);
+pgslw(2);
 
         $data_file = 'CORADMIN';
         $yt_axis   = 'CORADMIN';
@@ -1192,7 +1017,9 @@ pgslw(2);
         plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/state_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/state_file-1.gif");
+system("rm -rf pgplot.*");
 
 $yskip = 0;
 
@@ -1201,7 +1028,7 @@ $yskip = 0;
 #
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
 
@@ -1217,10 +1044,16 @@ pgslw(2);
         plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/pcad_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/pcad_file.gif");
+system("rm -rf pgplot.*");
+
+
+
+
 
 pgbegin(0, "/ps",1,1);
-pgsubp(1,2);
+pgsubp(1,3);
 pgsch(2);
 pgslw(2);
 
@@ -1272,6 +1105,17 @@ pgslw(2);
 
         plot_fig();
 
+pgclos();
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/acc_pcad_file-0.gif");
+system("rm -rf pgplot.*");
+
+pgbegin(0, "/ps",1,1);
+pgsubp(1,3);
+pgsch(2);
+pgslw(2);
+
+
         $data_file = 'ACC_PWRF';
         $yt_axis   = 'INTEGRATED TIME (day)';
         $xt_axis   = 'Time (DOM)';
@@ -1321,17 +1165,13 @@ pgslw(2);
         plot_fig();
 
 pgclos();
-system("mv pgplot.ps $web_dir/$diryear/acc_pcad_file.ps");
+system("echo ''|gs -sDEVICE=ppmraw  -r256x256 -q -NOPAUSE -sOutputFile=-  pgplot.ps| pnmflip -r270 | ppmtogif > pgplot.gif");
+system("convert pgplot.gif  -fuzz 1% -trim +repage  $web_dir/$diryear/acc_pcad_file-1.gif");
+system("rm -rf pgplot.*");
 #
-#---- create gif files
+#--- convert ps files into pdf fils
 #
-system(" /usr/local/bin/perl $bin_dir/mj_plots.perl $diryear");
-
-#
-#---  printing html page.
-#
-
-print_html_page();
+convert_ps_to_pdf();
 
 ######################################################
 ### y_min_max: find min and max of y axis          ###
@@ -1463,110 +1303,18 @@ sub rm_dupl {
 	system("rm ./zspace");
 }
 
-
 ######################################################
-### print_html_page: printing html pages           ###
+######################################################
 ######################################################
 
-sub print_html_page {
+sub convert_ps_to_pdf {
 
-	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+    $input =  `ls $web_dir/$diryear/*.ps`;
+    @list  = split(/\n+/, $input);
 
-	$uyday++;
-	if($uyear < 1900) {
-        	$uyear = 1900 + $uyear;
-	}
-	$month = $umon + 1;
-	
-	if ($uyear == 1999) {
-        	$dom = $uyday - 202;
-	}elsif($uyear >= 2000){
-        	$dom = $uyday + 163 + 365*($uyear - 2000);
-        	if($uyear > 2000) {
-                	$dom++;
-        	}
-        	if($uyear > 2004) {
-                	$dom++;
-        	}
-        	if($uyear > 2008) {
-                	$dom++;
-        	}
-        	if($uyear > 2012) {
-                	$dom++;
-        	}
-        	if($uyear > 2016) {
-                	$dom++;
-        	}
-        	if($uyear > 2020) {
-                	$dom++;
-        	}
-	}
-
-#
-#--- a top MJ html page
-#
-
-	open(OUT, ">$web_dir/../comprehensive.html");
-	print OUT "<!DOCTYPE html>\n";
-	print OUT "<html>\n";
-    print OUT "<head>\n";
-	print OUT "<title> Comprehensive Summary </title>\nr";
-    print OUT "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
-    print OUT "<style  type='text/css'>\n";
-    print OUT "table{text-align:center;margin-left:auto;margin-right:auto;border-style:solid;border-spacing:8px;border-width:2px;border-collapse:separate}\n";
-    print OUT "a:link {color:#00CCFF;}\n";
-    print OUT "a:visited {color:#B6FFFF;}\n";
-    print OUT "</style>\n";
-    print OUT "</head>\n";
-	
-	print OUT '<body  style="color:#FFFFFF;background-color:#000000">';
-	print OUT "\n";
-	print OUT '<h1 style="text-align:center">Comprehensive Summary of State Changes</h1>';
-	print OUT "\n";
-	print OUT '<h1 style="text-align:center">Updated ';
-	print OUT "$uyear-$month-$umday  ";
-	print OUT "\n";
-	print OUT "<br>";
-	print OUT "DAY OF YEAR: $uyday ";
-	print OUT "\n";
-	print OUT "<br>";
-	print OUT "DAY OF MISSION: $dom ";
-	print OUT '</h1>';
-	print OUT "\n";
-	print OUT '<hr /> ';
-    print OUT "<div style='padding-top:20px;padding-bottom:20px;'>\n";
-	print OUT '  <ul>';
-	print OUT "\n";
-	
-	for($hyear = 1999; $hyear <  $diryear+1; $hyear++){
-		$htmname = 'year'."$hyear".'.html';
-		print OUT '<li><a href="./MJ/',"$htmname",'">Comprihensive Summary for Year ';
-		print OUT "$hyear",'</a></li>',"\n";
-	}
-	
-	print OUT '</ul>';
-	print OUT "\n";
-    print OUT "</div>\n";
-	print OUT '<hr />';
-    print OUT "<p style='padding-top:10px;'>\n";
-	print OUT '    <a href="http://asc.harvard.edu/mta_days/mta_trends/trends.html">Link to MTA Trend Page</a>';
-	print OUT '</p>';
-	print OUT "</body>\n";
-	print OUT "</html>\n";
-	
-	close(OUT);
-
-#
-#--- a html page for $diryear
-#
-
-	$htmname = "$web_dir".'/year'."$diryear".'.html';
-	open(OUT,">$htmname");
-
-    $input = `cat $house_keeping/template_mj`;
-    $input =~ s/#YEAR#/$diryear/g;
-
-    print OUT"$input";
-
-	close(OUT);
+    foreach $ent (@list){
+        $out   = $ent;
+        $out   =~ s/\.ps/\.pdf/;
+        system("/usr/bin/ps2pdf $ent $out");
+    }
 }
